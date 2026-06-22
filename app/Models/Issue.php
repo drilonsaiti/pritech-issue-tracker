@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Enum\IssuePriority;
 use App\Models\Enum\IssueStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Issue extends Model
 {
     //
+    use HasFactory;
+
 
     protected $fillable = [
       'project_id',

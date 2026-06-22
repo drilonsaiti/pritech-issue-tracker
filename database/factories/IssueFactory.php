@@ -1,0 +1,33 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\Enum\IssuePriority;
+use App\Models\Enum\IssueStatus;
+use App\Models\Issue;
+use App\Models\Project;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends Factory<Issue>
+ */
+class IssueFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            //
+            'project_id' => Project::factory(),
+            'title' => fake()->sentence(6),
+            'description' => fake()->paragraph(),
+            'status' => fake()->randomElement(IssueStatus::cases()),
+            'priority' => fake()->randomElement(IssuePriority::cases()),
+            'due_date' => fake()->optional(0.7)->dateTimeBetween('now','+2 months'),
+        ];
+    }
+}
