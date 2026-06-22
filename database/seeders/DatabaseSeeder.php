@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
         $tags = Tag::factory(8)->create();
 
         // Create projects
-        $projects = Project::factory(5)->create();
+        $projects = Project::factory(50)->create();
 
         // For each project,create issues and attach tags & comments
         $projects->each(function (Project $project) use ($tags) {
