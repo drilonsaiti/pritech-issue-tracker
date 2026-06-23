@@ -10,6 +10,7 @@ use App\Models\Issue;
 use App\Models\Project;
 use App\Models\Tag;
 use App\Queries\IssueSearchQuery;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class IssueController extends Controller
@@ -69,8 +70,9 @@ class IssueController extends Controller
     {
         //
         $issue->load(['tags','project']);
+        $tags = Tag::all();
 
-        return view('issues.show', compact('issue'));
+        return view('issues.show', compact('issue','tags'));
     }
 
     /**
@@ -120,6 +122,49 @@ class IssueController extends Controller
             return redirect()
                 ->route('issues.index')
                 ->withErrors([ $exception->getMessage()]);
+        }
+    }
+
+    public function attachTag(Request $request, Issue $issue): JsonResponse
+    {
+        $request->validate([
+            'tag_id' =>  ['required','integer','exists:tags,id'],
+        ]);
+
+        $issue->tags()->syncWithoutDetaching($request->tag_id);
+
+        $tag = Tag::find($request->tag_id);
+
+        return response()->json([
+            'message' => 'Tag attached',
+            'tag' => $tag,
+        ],200);
+    }
+
+    public function detachTag(Issue $issue,Tag $tag): JsonResponse
+    {
+        $issue->tags()->detach($tag->id);
+
+
+        return response()->json([
+            'message' => 'Tag detached',
+        ],200);
+    }
+
+    public function getCommentsByIssue(Issue $issue)
+    {
+        try {
+            $comments = $issue->comments()
+                ->latest()
+                ->paginate(5);
+
+            return response()->json([
+                'data' => $comments,
+            ],200);
+        }catch (\Exception $exception) {
+            return response()->json([
+                'message' => 'Something went wrong.',
+            ],500);
         }
     }
 }

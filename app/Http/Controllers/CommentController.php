@@ -64,22 +64,4 @@ class CommentController extends Controller
             ],500);
         }
     }
-
-    public function getCommentsByIssue(Issue $issue)
-    {
-       try {
-           $comments = $issue->comments()
-               ->latest()
-               ->paginate(10);
-
-           return response()->json([
-               'data' => $comments,
-           ],200);
-       }catch (\Exception $exception) {
-           return response()->json([
-               'message' => 'Something went wrong.',
-           ],500);
-       }
-    }
-
 }

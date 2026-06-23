@@ -33,13 +33,15 @@
         <h6 class="mb-3">Tags</h6>
         <div id="tags-list" class="d-flex flex-wrap gap-2 mb-3">
             @foreach ($issue->tags as $tag)
-                <span class="badge bg-light text-dark border" data-tag-id="{{ $tag->id }}">
+                <span class="tag-badge badge bg-light text-dark border" data-tag-id="{{ $tag->id }}">
                     {{ $tag->name }}
-                    <button type="button" class="btn-close btn-close-sm ms-1 detach-tag-btn" style="font-size:.6rem;"></button>
+                    <button type="button" class="btn-close btn-close-sm ms-1 detach-tag-btn"
+                            style="font-size:.6rem;" data-tag-id="{{ $tag->id }}"></button>
                 </span>
             @endforeach
         </div>
-        <button type="button" class="btn btn-sm btn-secondary-custom" data-bs-toggle="modal" data-bs-target="#attachTagModal">
+        <button type="button" class="btn btn-sm btn-secondary-custom" data-bs-toggle="modal"
+                data-bs-target="#attachTagModal">
             + Add Tag
         </button>
     </div>
@@ -50,6 +52,7 @@
         <div id="comments-pagination" class="mb-3"></div>
 
         <form id="comment-form">
+            <input type="hidden" name="issue_id" value="{{$issue->id}}">
             <div class="mb-2">
                 <input type="text" name="author_name" class="form-control" placeholder="Your name">
                 <div class="text-danger small mt-1" data-error="author_name"></div>
@@ -61,7 +64,199 @@
             <button type="submit" class="btn btn-primary-custom btn-sm">Post Comment</button>
         </form>
     </div>
+
+    <div class="modal fade" id="attachTagModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Attach a Tag</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <select id="tag-select" class="form-select">
+                        <option value="">Select a tag...</option>
+                        @foreach($tags as $tag)
+                            <option value="{{$tag->id}}">{{$tag->name}}</option>
+                        @endforeach
+                    </select>
+                    <div class="text-danger small mt-2" id="attach-tag-error"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary-custom" id="confirm-attach-tag">Attach</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            const issueId = document.getElementById('tags-section').dataset.issueId;
+            const tagsList = document.getElementById('tags-list');
+
+            document.getElementById('confirm-attach-tag').addEventListener('click', function () {
+                const tagSelect = document.getElementById('tag-select');
+                const tagId = tagSelect.value;
+                const error = document.getElementById('attach-tag-error');
+                error.textContent = '';
+
+                if (!tagId) {
+                    error.textContent = 'Please select a tag.';
+                    return;
+                }
+
+                fetch(`/issues/${issueId}/tags`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({tag_id: tagId})
+                })
+                    .then(async (res) => {
+                        const data = await res.json();
+                        if (!res.ok) throw data;
+                        return data;
+                    })
+                    .then((data) => {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-light text-dark border d-inline-flex align-items-center gap-1';
+                        badge.dataset.tagId = data.tag.id;
+                        badge.innerHTML = `${data.tag.name} <button type="button" class="btn-close detach-tag-btn" style="font-size:.55rem;" data-tag-id="${data.tag.id}"></button>`;
+                        tagsList.appendChild(badge);
+
+                        tagSelect.value = '';
+                        bootstrap.Modal.getInstance(document.getElementById('attachTagModal')).hide();
+                    })
+                    .catch((err) => {
+                        error.textContent = err.message || 'Something went wrong.';
+                    });
+            })
+
+            tagsList.addEventListener('click', function (e) {
+                if (!e.target.classList.contains('detach-tag-btn')) return;
+
+                const tagId = e.target.dataset.tagId;
+                const badge = e.target.closest('.tag-badge');
+
+                fetch(`/issues/${issueId}/tags/${tagId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                })
+                    .then((res) => {
+                        if (!res.ok) throw new Error('Failed to detach tag.');
+                        badge.remove();
+                    })
+                    .catch((err) => alert(err.message));
+            });
+
+            const commentsList = document.getElementById('comments-list');
+            const commentsPagination = document.getElementById('comments-pagination');
+            const commentForm = document.getElementById('comment-form');
+
+            function renderComment(comment) {
+                const div = document.createElement('div');
+                div.className = 'border-bottom pb-2 mb-2';
+                div.innerHTML = `
+                    <div class="fw-semibold small">${comment.author_name}</div>
+                    <div class="small text-muted"> ${new Date(comment.created_at).toLocaleString()}</div>
+                    <div>${comment.body}
+                `;
+
+                return div;
+            }
+
+            function loadComments(page = 1) {
+                fetch(`/issues/${issueId}/comments?page=${page}`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then((res) => res.json())
+                    .then((json) => {
+                        const paginator = json.data;
+                        commentsList.innerHTML = '';
+
+                        if (paginator.data.length === 0) {
+                            commentsList.innerHTML = '<p class="text-muted small">No comments yet.</p>';
+                        } else {
+                            paginator.data.forEach((comment) => {
+                                commentsList.appendChild(renderComment(comment))
+                            })
+                        }
+
+                        commentsPagination.innerHTML = '';
+                        if (paginator.last_page > 1) {
+                            for (let i = 1; i <= paginator.last_page; i++) {
+                                const btn = document.createElement('button');
+                                btn.type = 'button';
+                                btn.className = 'btn btn-sm ' + (i === paginator.current_page ? 'btn-primary-custom' : 'btn-secondary-custom');
+                                btn.textContent = i;
+                                btn.addEventListener('click', () => loadComments(i));
+                                commentsPagination.appendChild(btn);
+                            }
+                        }
+                    })
+                    .catch(() => {
+                        commentsList.innerHTML = '<p class="text-danger small">Failed to load comments.</p>';
+                    });
+            }
+
+            commentForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                commentForm.querySelectorAll('[data-error]').forEach(el => el.textContent = '');
+                const formData = new FormData(commentForm);
+                const payload = Object.fromEntries(formData.entries());
+
+                fetch('/comments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                })
+                    .then(async (res) => {
+                        const data = await res.json();
+                        if (!res.ok) throw {status: res.status, data};
+                        return data;
+                    })
+                    .then((response) => {
+                        const newCommentElement = renderComment(response.data);
+                        if (commentsList.firstChild && commentsList.firstChild.tagName === 'P') {
+                            commentsList.innerHTML = '';
+                        }
+                        commentsList.insertBefore(newCommentElement, commentsList.firstChild);
+
+                        commentForm.reset();
+                        document.querySelector('[name=issue_id]').value = issueId;
+                    })
+                    .catch((err) => {
+                        if (err.status === 422 && err.data.errors) {
+                            Object.entries(err.data.errors).forEach(([field, messages]) => {
+                                const el = commentForm.querySelector(`[data-error="${field}"]`);
+                                if (el) el.textContent = messages[0];
+                            });
+                        } else {
+                            alert('Something went wrong posting your comment.');
+                        }
+                    });
+            })
+
+            loadComments();
+        });
+
+
+    </script>
 @endsection
