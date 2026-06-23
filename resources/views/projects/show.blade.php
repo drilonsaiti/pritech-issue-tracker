@@ -23,7 +23,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">Issues</h5>
         <a href="{{ route('issues.create', ['project_id' => $project->id]) }}" class="btn btn-primary-custom btn-sm">
-            New Issue
+            + New Issue
         </a>
     </div>
 

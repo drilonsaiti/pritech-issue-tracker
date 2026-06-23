@@ -33,7 +33,8 @@
         <h6 class="mb-3">Tags</h6>
         <div id="tags-list" class="d-flex flex-wrap gap-2 mb-3">
             @foreach ($issue->tags as $tag)
-                <span class="tag-badge badge bg-light text-dark border" data-tag-id="{{ $tag->id }}">
+                <span class="tag-badge badge bg-light border" data-tag-id="{{ $tag->id }}"
+                style="color: {{$tag->color}}">
                     {{ $tag->name }}
                     <button type="button" class="btn-close btn-close-sm ms-1 detach-tag-btn"
                             style="font-size:.6rem;" data-tag-id="{{ $tag->id }}"></button>

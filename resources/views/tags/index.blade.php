@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <a href="{{ route('tags.create') }}" class="btn btn-primary-custom">New Tag</a>
+        <a href="{{ route('tags.create') }}" class="btn btn-primary-custom">+ New Tag</a>
     </div>
 
     <div class="card-surface p-0">

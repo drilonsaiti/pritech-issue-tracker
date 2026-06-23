@@ -55,7 +55,7 @@
     </form>
 
     <div class="d-flex justify-content-end mb-3">
-        <a href="{{ route('issues.create') }}" class="btn btn-primary-custom">New Issue</a>
+        <a href="{{ route('issues.create') }}" class="btn btn-primary-custom">+ New Issue</a>
     </div>
 
     <div class="card-surface p-0">
