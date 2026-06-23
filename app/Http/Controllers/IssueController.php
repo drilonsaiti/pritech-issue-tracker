@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateIssueRequest;
 use App\Models\Enum\IssuePriority;
 use App\Models\Enum\IssueStatus;
 use App\Models\Issue;
+use App\Models\Project;
 use App\Models\Tag;
 use App\Queries\IssueSearchQuery;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class IssueController extends Controller
 
         $issues = $searchQuery->search($request->only(['tag','status','priority']));
 
+
         return view('issues.index', compact('issues', 'tags', 'statuses', 'priorities'));
     }
 
@@ -34,7 +36,11 @@ class IssueController extends Controller
     public function create()
     {
         //
-        return view('issues.create');
+        $projects = Project::all();
+        $statuses = IssueStatus::cases();
+        $priorities = IssuePriority::cases();
+
+        return view('issues.create',compact('projects', 'statuses', 'priorities'));
     }
 
     /**
@@ -62,7 +68,7 @@ class IssueController extends Controller
     public function show(Issue $issue)
     {
         //
-        $issue->load(['tags']);
+        $issue->load(['tags','project']);
 
         return view('issues.show', compact('issue'));
     }
@@ -73,7 +79,10 @@ class IssueController extends Controller
     public function edit(Issue $issue)
     {
         //
-        return view('issues.edit', compact('issue'));
+        $projects = Project::all();
+        $statuses = IssueStatus::cases();
+        $priorities = IssuePriority::cases();
+        return view('issues.edit', compact('issue', 'projects', 'statuses', 'priorities'));
     }
 
     /**
