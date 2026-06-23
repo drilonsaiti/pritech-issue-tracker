@@ -7,6 +7,7 @@
         <form action="{{ route('issues.store') }}" method="POST">
             @csrf
             @include('issues._form')
+            <a href="{{ url()->previous() }}" class="btn btn-secondary-custom">Cancel</a>
             <button type="submit" class="btn btn-primary-custom">Create Issue</button>
         </form>
     </div>

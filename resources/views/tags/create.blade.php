@@ -7,6 +7,7 @@
         <form action="{{ route('tags.store') }}" method="POST">
             @csrf
             @include('tags._form')
+            <a href="{{ url()->previous() }}" class="btn btn-secondary-custom">Cancel</a>
             <button type="submit" class="btn btn-primary-custom">Create Tag</button>
         </form>
     </div>

@@ -8,6 +8,7 @@
             @csrf
             @method('PUT')
             @include('tags._form')
+            <a href="{{ url()->previous() }}" class="btn btn-secondary-custom">Cancel</a>
             <button type="submit" class="btn btn-primary-custom">Update Tag</button>
         </form>
     </div>

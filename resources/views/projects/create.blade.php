@@ -7,6 +7,7 @@
         <form action="{{ route('projects.store') }}" method="POST">
             @csrf
             @include('projects._form')
+            <a href="{{ url()->previous() }}" class="btn btn-secondary-custom">Cancel</a>
             <button type="submit" class="btn btn-primary-custom">Create Project</button>
         </form>
     </div>

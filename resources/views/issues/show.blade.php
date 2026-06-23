@@ -77,7 +77,7 @@
                 <div class="text-danger small mt-1" data-error="author_name"></div>
             </div>
             <div class="mb-2">
-                <textarea name="body" class="form-control" rows="2" placeholder="Write a comment..."></textarea>
+                <textarea name="body" class="form-control" rows="2" maxlength="200" placeholder="Write a comment..."></textarea>
                 <div class="text-danger small mt-1" data-error="body"></div>
             </div>
             <button type="submit" class="btn btn-primary-custom btn-sm">Post Comment</button>
