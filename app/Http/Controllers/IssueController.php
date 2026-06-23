@@ -9,6 +9,7 @@ use App\Models\Enum\IssueStatus;
 use App\Models\Issue;
 use App\Models\Project;
 use App\Models\Tag;
+use App\Models\User;
 use App\Queries\IssueSearchQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,12 +22,15 @@ class IssueController extends Controller
     public function index(IssueSearchQuery $searchQuery,Request $request)
     {
         //
+        $issues = $searchQuery->search($request->only(['tag','status','priority','search']));
+
+        if ($request->wantsJson()) {
+            return response()->json(['data' => $issues]);
+        }
+
         $tags = Tag::all();
         $statuses = IssueStatus::cases();
         $priorities = IssuePriority::cases();
-
-        $issues = $searchQuery->search($request->only(['tag','status','priority']));
-
 
         return view('issues.index', compact('issues', 'tags', 'statuses', 'priorities'));
     }
@@ -69,7 +73,7 @@ class IssueController extends Controller
     public function show(Issue $issue)
     {
         //
-        $issue->load(['tags','project']);
+        $issue->load(['tags','project','members']);
         $tags = Tag::all();
 
         return view('issues.show', compact('issue','tags'));
@@ -158,6 +162,11 @@ class IssueController extends Controller
                 ->latest()
                 ->paginate(5);
 
+            $comments->getCollection()->transform(function ($comment) {
+                $comment->is_owner = $comment->user_id == auth()->id();
+                return $comment;
+            });
+
             return response()->json([
                 'data' => $comments,
             ],200);
@@ -166,5 +175,29 @@ class IssueController extends Controller
                 'message' => 'Something went wrong.',
             ],500);
         }
+    }
+
+    public function attachMember(Request $request,Issue $issue): JsonResponse
+    {
+        $request->validate([
+            'user_id' => ['required','integer','exists:users,id'],
+        ]);
+
+        $issue->members()->syncWithoutDetaching([$request->user_id]);
+
+        $user = User::find($request->user_id);
+
+        return response()->json([
+            'message' => 'Member assigned',
+            'member' => $user,
+        ],200);
+    }
+
+    public function detachMember(Issue $issue,User $user): JsonResponse
+    {
+        $issue->members()->detach($user);
+        return response()->json([
+            'message' => 'Member detached',
+        ],200);
     }
 }

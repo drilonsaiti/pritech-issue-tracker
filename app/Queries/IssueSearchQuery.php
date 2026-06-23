@@ -13,6 +13,15 @@ class IssueSearchQuery
     {
         $query = Issue::query();
 
+
+        if(!empty($filters['search'])) {
+            $term = $filters['search'];
+            $query->where(function ($query) use ($term) {
+                $query->where('title', 'LIKE', "%{$term}%")
+                    ->orWhere('description', 'LIKE', "%{$term}%");
+            });
+        }
+
         // Tag filter
         if (!empty($filters['tag'])) {
             $query->whereHas('tags', function ($q) use ($filters) {

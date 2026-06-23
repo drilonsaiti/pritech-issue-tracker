@@ -31,13 +31,18 @@
                     <td>{{$project->start_date?->format('M d, Y') ?? '--'}}</td>
                     <td>{{$project->deadline?->format('M d, Y') ?? '--'}}</td>
                     <td class="text-end">
-                        <a href="{{ route('projects.edit', $project) }}" class="btn btn-sm btn-secondary-custom">Edit</a>
-                        <form action="{{ route('projects.destroy', $project) }}" method="POST" class="d-inline"
-                              onsubmit="return confirm('Delete this project and all its issues?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-secondary-custom text-danger">Delete</button>
-                        </form>
+                        @can('update', $project)
+                            <a href="{{ route('projects.edit', $project) }}" class="btn btn-secondary-custom">Edit</a>
+                        @endcan
+                        @can('delete', $project)
+                            <form action="{{ route('projects.destroy', $project) }}" method="POST" class="d-inline"
+                                  onsubmit="return confirm('Delete this project and all its issues?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-secondary-custom text-danger">Delete
+                                </button>
+                            </form>
+                        @endcan
                     </td>
                 </tr>
             @empty
@@ -50,12 +55,7 @@
         </table>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mt-4">
-        <small class="text-muted">
-            Showing {{ $projects->firstItem() }}–{{ $projects->lastItem() }}
-            of {{ $projects->total() }} projects
-        </small>
-
+    <div class="d-flex justify-content-end align-items-center mt-4">
         {{ $projects->links() }}
     </div>
 @endsection

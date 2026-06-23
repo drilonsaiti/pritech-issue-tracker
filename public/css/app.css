@@ -24,17 +24,37 @@
         0 8px 24px rgba(0,0,0,.04);
 }
 
+html,
+body {
+    min-height: 100%;
+}
+
 body {
     background: var(--canvas);
     color: var(--body);
     font-family: "Geist", sans-serif;
+    overflow-x: hidden;
 }
 
 .sidebar {
-    height: 100dvh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+
     width: 240px;
+    height: 100dvh;
+
     background: var(--surface);
     border-right: 1px solid var(--hairline);
+
+    display: flex;
+    flex-direction: column;
+
+    z-index: 1040;
+    overflow-y: auto;
+
+    transition: transform .2s ease;
 }
 
 .sidebar .nav-link {
@@ -51,6 +71,45 @@ body {
 .sidebar .nav-link.active {
     background: var(--ink);
     color: white;
+}
+
+.main-shell {
+    margin-left: 240px;
+    min-height: 100dvh;
+    width: calc(100% - 240px);
+}
+
+header {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+
+    background: var(--surface);
+    border-bottom: 1px solid var(--hairline);
+}
+
+.mobile-menu-btn {
+    display: none;
+
+    width: 38px;
+    height: 38px;
+
+    align-items: center;
+    justify-content: center;
+
+    background: white;
+    color: var(--ink);
+
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+}
+
+.mobile-menu-btn:hover {
+    border-color: var(--ink);
+}
+
+.sidebar-backdrop {
+    display: none;
 }
 
 header {
@@ -178,4 +237,42 @@ header {
 .page-link:focus {
     box-shadow: 0 0 0 .2rem rgba(0, 112, 243, .15);
     border-color: var(--blue);
+}
+
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    body.sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+
+    .main-shell {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .mobile-menu-btn {
+        display: inline-flex;
+        flex-shrink: 0;
+    }
+
+    .sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+
+        background: rgba(0, 0, 0, .25);
+
+        z-index: 1030;
+        display: none;
+    }
+
+    body.sidebar-open .sidebar-backdrop {
+        display: block;
+    }
+
+    body.sidebar-open {
+        overflow: hidden;
+    }
 }

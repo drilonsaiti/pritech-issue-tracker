@@ -46,6 +46,24 @@
         </button>
     </div>
 
+    <div class="card-surface p-4 mb-4" id="members-section" data-issue-id="{{ $issue->id }}">
+        <h6 class="mb-3">Members</h6>
+        <div id="members-list" class="d-flex flex-wrap gap-2 mb-3">
+            @foreach ($issue->members as $member)
+                <span class="member-badge badge bg-light text-dark border d-inline-flex align-items-center gap-1"
+                      data-member-id="{{ $member->id }}">
+                {{ $member->name }}
+                <button type="button" class="btn-close detach-member-btn" style="font-size:.55rem;"
+                        data-member-id="{{ $member->id }}" data-tag-id="{{ $tag->id }}"></button>
+            </span>
+            @endforeach
+        </div>
+        <button type="button" class="btn btn-sm btn-secondary-custom" data-bs-toggle="modal"
+                data-bs-target="#attachMemberModal">
+            + Assign Member
+        </button>
+    </div>
+
     <div class="card-surface p-4" id="comments-section" data-issue-id="{{ $issue->id }}">
         <h6 class="mb-3">Comments</h6>
         <div id="comments-list" class="mb-3"></div>
@@ -54,7 +72,7 @@
         <form id="comment-form">
             <input type="hidden" name="issue_id" value="{{$issue->id}}">
             <div class="mb-2">
-                <input type="text" name="author_name" class="form-control" placeholder="Your name">
+                <input type="text" value="{{auth()->user()->name}}" name="author_name" class="form-control" placeholder="Your name">
                 <div class="text-danger small mt-1" data-error="author_name"></div>
             </div>
             <div class="mb-2">
@@ -86,6 +104,30 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary-custom" id="confirm-attach-tag">Attach</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="attachMemberModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Assign a Member</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <select id="member-select" class="form-select">
+                        <option value="">Select a user...</option>
+                        @foreach (\App\Models\User::all() as $user)
+                            <option value="{{ $user->id }}">{{ $user->name }}</option>
+                        @endforeach
+                    </select>
+                    <div class="text-danger small mt-2" id="attach-member-error"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary-custom" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary-custom" id="confirm-attach-member">Assign</button>
                 </div>
             </div>
         </div>
@@ -165,12 +207,25 @@
 
             function renderComment(comment) {
                 const div = document.createElement('div');
-                div.className = 'border-bottom pb-2 mb-2';
+                div.className = 'border-bottom pb-2 mb-2 comment-item';
+                div.dataset.commentId = comment.id;
+
                 div.innerHTML = `
-                    <div class="fw-semibold small">${comment.author_name}</div>
-                    <div class="small text-muted"> ${new Date(comment.created_at).toLocaleString()}</div>
-                    <div>${comment.body}
-                `;
+        <div class="fw-semibold small">${comment.author_name}</div>
+
+        ${comment.is_owner ? `
+            <div>
+                <button
+                    class="btn btn-sm btn-link text-danger delete-comment-btn p-0"
+                    data-comment-id="${comment.id}">
+                    Delete
+                </button>
+            </div>
+        ` : ''}
+
+        <div class="small text-muted">${new Date(comment.created_at).toLocaleString()}</div>
+        <div>${comment.body}</div>
+    `;
 
                 return div;
             }
@@ -210,6 +265,23 @@
                         commentsList.innerHTML = '<p class="text-danger small">Failed to load comments.</p>';
                     });
             }
+
+            commentsList.addEventListener('click', function (e) {
+                if (!e.target.classList.contains('delete-comment-btn')) return;
+
+                const commentId = e.target.dataset.commentId;
+                if (!confirm('Delete this comment?')) return;
+
+                fetch(`/comments/${commentId}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                })
+                    .then((res) => {
+                        if (!res.ok) throw new Error('Failed to delete.');
+                        e.target.closest('.comment-item').remove();
+                    })
+                    .catch((err) => alert(err.message));
+            });
 
             commentForm.addEventListener('submit', function (e) {
                 e.preventDefault();
@@ -255,6 +327,69 @@
             })
 
             loadComments();
+
+            const membersList = document.getElementById('members-list');
+
+            document.getElementById('confirm-attach-member').addEventListener('click', function () {
+                const memberSelect = document.getElementById('member-select');
+                const userId = memberSelect.value;
+                const error = document.getElementById('attach-member-error');
+                error.textContent = '';
+
+                if (!userId) {
+                    error.textContent = 'Please select a user.';
+                    return;
+                }
+
+                fetch(`/issues/${issueId}/members`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({user_id: userId}),
+                })
+                    .then(async (res) => {
+                        const data = await res.json();
+                        if (!res.ok) throw data;
+                        return data;
+                    })
+                    .then((data) => {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-light text-dark border d-inline-flex align-items-center gap-1';
+                        badge.dataset.memberId = data.member.id;
+                        badge.innerHTML = `${data.member.name} <button type="button" class="btn-close detach-member-btn" style="font-size:.55rem;" data-member-id="${data.member.id}"></button>`;
+                        membersList.appendChild(badge);
+
+
+                        memberSelect.value = '';
+                        bootstrap.Modal.getInstance(document.getElementById('attachMemberModal')).hide();
+                    })
+                    .catch((err) => {
+                        error.textContent = err.message || 'Something went wrong.';
+                    });
+            });
+
+            membersList.addEventListener('click', function (e) {
+                if (!e.target.classList.contains('detach-member-btn')) return;
+
+                const userId = e.target.dataset.memberId;
+                const badge = e.target.closest('.member-badge');
+
+                fetch(`/issues/${issueId}/members/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                })
+                    .then((res) => {
+                        if (!res.ok) throw new Error('Failed to remove member.');
+                        badge.remove();
+                    })
+                    .catch((err) => alert(err.message));
+            });
         });
 
 

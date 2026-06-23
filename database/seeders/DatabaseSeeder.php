@@ -19,17 +19,22 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Create user
+        $users = User::factory(3)->create();
+
         // Create tag first
         $tags = Tag::factory(8)->create();
 
         // Create projects
-        $projects = Project::factory(50)->create();
+        $projects = Project::factory(25)->create()->each(function (Project $project) use ($users) {
+            $project->update(['owner_id' => $users->random()->id]);
+        });
 
         // For each project,create issues and attach tags & comments
-        $projects->each(function (Project $project) use ($tags) {
+        $projects->each(function (Project $project) use ($tags,$users) {
             Issue::factory(rand(5,10))
                 ->create(['project_id' => $project->id])
-                ->each(function (Issue $issue) use ($tags) {
+                ->each(function (Issue $issue) use ($tags,$users) {
 
                     // Attach tags to issue
                     $issue->tags()->attach(
@@ -38,7 +43,10 @@ class DatabaseSeeder extends Seeder
 
                     // Add comments per issue
                     Comment::factory(rand(0,5))
-                        ->create(['issue_id' => $issue->id]);
+                        ->create([
+                            'issue_id' => $issue->id,
+                            'user_id' => $users->random()->id,
+                        ]);
                 });
         });
     }

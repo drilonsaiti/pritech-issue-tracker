@@ -13,13 +13,19 @@ class Comment extends Model
 
 
     protected $fillable = [
-      'issue_id',
-      'author_name',
-      'body'
+        'issue_id',
+        'author_name',
+        'body',
+        'user_id',
     ];
 
     public function issue(): BelongsTo
     {
         return $this->belongsTo(Issue::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Project;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
     //
+    use AuthorizesRequests;
 
     public function index()
     {
@@ -26,7 +28,10 @@ class ProjectController extends Controller
     public function store(StoreProjectRequest $request)
     {
         try {
-            $project = Project::create($request->validated());
+            $project = Project::create([
+                ...$request->validated(),
+                'owner_id' => auth()->id()
+            ]);
 
             return redirect()
                 ->route('projects.show', $project)
@@ -49,11 +54,15 @@ class ProjectController extends Controller
 
     public function edit(Project $project)
     {
+        $this->authorize('update', $project);
+
         return view('projects.edit', compact('project'));
     }
 
     public function update(UpdateProjectRequest $request, Project $project)
     {
+        $this->authorize('update', $project);
+
         try {
             $project->update($request->validated());
 
@@ -69,6 +78,8 @@ class ProjectController extends Controller
 
     public function destroy(Project $project)
     {
+        $this->authorize('delete', $project);
+
         try {
             $project->delete();
 

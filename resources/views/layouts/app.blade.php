@@ -14,54 +14,101 @@
     @yield('styles')
 </head>
 <body>
-<div class="d-flex">
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-
-    <aside class="sidebar p-3">
-        <div class="mb-4">
-            <span class="fs-5 fw-semibold text-dark">Issue Tracker</span>
-        </div>
-        <nav class="nav nav-pills flex-column gap-1">
-            <a class="nav-link {{ request()->routeIs('projects.*') ? 'active' : '' }}"
-               href="{{ route('projects.index') }}">Projects</a>
-            <a class="nav-link {{ request()->routeIs('issues.*') ? 'active' : '' }}"
-               href="{{ route('issues.index') }}">Issues</a>
-            <a class="nav-link {{ request()->routeIs('tags.*') ? 'active' : '' }}"
-               href="{{ route('tags.index') }}">Tags</a>
-        </nav>
-    </aside>
-
-    {{-- Main content --}}
-    <div class="flex-grow-1">
-        <header class="bg-white border-bottom px-4 py-3">
-            <h1 class="fs-5 fw-semibold mb-0 text-dark">@yield('header', 'Dashboard')</h1>
-        </header>
-
-        <main class="p-4">
-            @if (session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
-            @endif
-
-            @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul class="mb-0">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            @yield('content')
-        </main>
+<aside class="sidebar p-3" id="appSidebar">
+    <div class="mb-4">
+        <span class="fs-5 fw-semibold text-dark">Issue Tracker</span>
     </div>
 
+    <nav class="nav nav-pills flex-column gap-1">
+        <a class="nav-link {{ request()->routeIs('projects.*') ? 'active' : '' }}"
+           href="{{ route('projects.index') }}">Projects</a>
+
+        <a class="nav-link {{ request()->routeIs('issues.*') ? 'active' : '' }}"
+           href="{{ route('issues.index') }}">Issues</a>
+
+        <a class="nav-link {{ request()->routeIs('tags.*') ? 'active' : '' }}"
+           href="{{ route('tags.index') }}">Tags</a>
+    </nav>
+
+    <div class="mt-auto border-top pt-2">
+        <div class="d-flex align-items-center justify-content-between px-1 py-2">
+            <div class="small text-muted">{{ auth()->user()->name }}</div>
+
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-secondary-custom">
+                    Log out
+                </button>
+            </form>
+        </div>
+    </div>
+</aside>
+
+<div class="main-shell">
+    <header class="bg-white border-bottom px-4 py-3">
+        <div class="d-flex align-items-center gap-3">
+            <button type="button" class="mobile-menu-btn" id="sidebarToggle" aria-label="Open menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 6H20M4 12H20M4 18H20"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"/>
+                </svg>
+            </button>
+
+            <h1 class="fs-5 fw-semibold mb-0 text-dark">@yield('header', 'Dashboard')</h1>
+        </div>
+    </header>
+
+    <main class="p-4">
+        @if (session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @yield('content')
+    </main>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js">
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggle = document.getElementById('sidebarToggle');
+        const backdrop = document.getElementById('sidebarBackdrop');
+        const sidebarLinks = document.querySelectorAll('#appSidebar .nav-link');
+
+        function openSidebar() {
+            document.body.classList.add('sidebar-open');
+        }
+
+        function closeSidebar() {
+            document.body.classList.remove('sidebar-open');
+        }
+
+        toggle?.addEventListener('click', openSidebar);
+        backdrop?.addEventListener('click', closeSidebar);
+
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', closeSidebar);
+        });
+    });
 </script>
+
 @yield('scripts')
 </body>
+
 </html>

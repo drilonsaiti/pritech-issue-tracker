@@ -7,16 +7,23 @@ use App\Http\Requests\StoreTagRequest;
 use App\Http\Requests\UpdateCommentRequest;
 use App\Models\Comment;
 use App\Models\Issue;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
     //
+    use AuthorizesRequests;
 
     public function store(StoreCommentRequest $request)
     {
         try {
-            $comment = Comment::create($request->validated());
+            $comment = Comment::create([
+                ...$request->validated(),
+                'user_id' => auth()->id(),
+            ]);
+
+            $comment->is_owner = true;
 
             return response()->json([
                 'message' => 'Comment created successfully.',
@@ -34,6 +41,8 @@ class CommentController extends Controller
 
     public function update(UpdateCommentRequest $request, Comment $comment)
     {
+        $this->authorize('update', $comment);
+
         try {
             $comment->update($request->validated());
 
@@ -53,6 +62,8 @@ class CommentController extends Controller
 
     public function destroy(Comment $comment)
     {
+        $this->authorize('delete', $comment);
+
         try {
             $comment->delete();
             return response()->json([

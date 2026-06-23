@@ -6,6 +6,11 @@
 
     <form method="GET" action="{{route('issues.index')}}" class="card-surface p-3 mb-3">
         <div class="row g-2 align-items-end">
+            <div class="mb-3">
+                <input type="text" id="issue-search" class="form-control"
+                       placeholder="Search issues by title or description..." value="{{ request('search') }}">
+            </div>
+
             <div class="col-md-3">
                 <label for="status" class="form-label small">Status</label>
                 <select name="status[]" class="form-select select2" multiple>
@@ -54,7 +59,7 @@
     </div>
 
     <div class="card-surface p-0">
-        <table class="table mb-0">
+        <table class="table mb-0" id="issues-result">
             <thead>
             <tr>
                 <th>Title</th>
@@ -68,7 +73,8 @@
             <tbody>
             @forelse ($issues as $issue)
                 <tr>
-                    <td><a href="{{ route('issues.show', $issue) }}" class="text-decoration-none">{{ $issue->title }}</a></td>
+                    <td><a href="{{ route('issues.show', $issue) }}"
+                           class="text-decoration-none">{{ $issue->title }}</a></td>
                     <td>{{ $issue->project->name }}</td>
                     <td><span class="badge badge-{{ $issue->status->value }}">{{ $issue->status->label() }}</span></td>
                     <td>{{ $issue->priority->label() }}</td>
@@ -85,17 +91,14 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="5" class="text-center text-muted py-4">No issues found.</td></tr>
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">No issues found.</td>
+                </tr>
             @endforelse
             </tbody>
         </table>
     </div>
-    <div class="d-flex justify-content-between align-items-center mt-4">
-        <small class="text-muted">
-            Showing {{ $issues->firstItem() }}–{{ $issues->lastItem() }}
-            of {{ $issues->total() }} projects
-        </small>
-
+    <div class="d-flex justify-content-end align-items-center mt-4">
         {{ $issues->links() }}
     </div>
 @endsection
@@ -110,6 +113,81 @@
                 allowClear: true,
                 closeOnSelect: false
             });
+
+            const searchInput = $('#issue-search');
+            const resultsContainer = $('#issues-result');
+            let debounceTimer = null;
+
+            function badgeClass(status) {
+                return 'badge-' + status
+            }
+
+            function renderResults(paginator) {
+                let rows = '';
+
+                if (paginator.data.length === 0) {
+                    rows = `<tr><td colspan="5" class="text-center text-muted py-4">No issues found.</td></tr>`;
+                } else {
+                    paginator.data.forEach((issue) => {
+                        rows += `
+                            <tr>
+                        <td><a href="/issues/${issue.id}" class="text-decoration-none">${issue.title}</a></td>
+                        <td>${issue.project ? issue.project.name : ''}</td>
+                        <td><span class="badge ${badgeClass(issue.status)}">${issue.status.label}</span></td>
+                        <td>${issue.priority}</td>
+                        <td>${issue.due_date ?? '—'}</td>
+                            </td>
+                        `;
+                    })
+                }
+
+                resultsContainer.html(`
+                <div class="card-surface p-0">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Project</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Due Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+                `);
+            }
+
+            searchInput.on('input',function () {
+                clearTimeout(debounceTimer);
+                const term = searchInput.val();
+
+                debounceTimer = setTimeout(() => {
+                    const params = new URLSearchParams(window.location.search);
+
+                    if(term){
+                        params.set('search',term);
+                    }else{
+                        params.delete('search')
+                    }
+
+                    params.delete('page')
+
+                    fetch(`{{route('issues.index')}}?${params.toString()}`,{
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                        .then((res) => res.json())
+                        .then((response) => renderResults(response.data))
+                        .catch(() => {
+                            resultsContainer.innerHTML = '<p class="text-danger small">Search failed.</p>';
+                        });
+                },400)
+            })
         });
+
+
     </script>
 @endsection
