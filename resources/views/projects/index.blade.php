@@ -15,6 +15,7 @@
                 <th>Issues</th>
                 <th>Start Date</th>
                 <th>Deadline</th>
+                <th>Owner</th>
                 <th class="text-end">Actions</th>
             </tr>
             </thead>
@@ -30,6 +31,7 @@
                     <td>{{$project->issues_count}}</td>
                     <td>{{$project->start_date?->format('M d, Y') ?? '--'}}</td>
                     <td>{{$project->deadline?->format('M d, Y') ?? '--'}}</td>
+                    <td>{{$project->owner->name}}</td>
                     <td class="text-end">
                         @can('update', $project)
                             <a href="{{ route('projects.edit', $project) }}" class="btn btn-secondary-custom">Edit</a>

@@ -25,8 +25,8 @@ class StoreCommentRequest extends FormRequest
         return [
             //
             'issue_id' => ['required', 'integer', 'exists:issues,id'],
-            'author_name' => ['required', 'string'],
-            'body' => ['required', 'string'],
+            'author_name' => ['required', 'string','max:100'],
+            'body' => ['required', 'string','max:200'],
         ];
     }
 }

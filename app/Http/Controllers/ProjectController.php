@@ -47,7 +47,7 @@ class ProjectController extends Controller
     {
         $project->load(['issues' => function ($query) {
             $query->latest();
-        }]);
+        }],'owner');
 
         return view('projects.show', compact('project'));
     }

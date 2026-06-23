@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateTagRequest extends FormRequest
 {
@@ -24,7 +25,7 @@ class UpdateTagRequest extends FormRequest
     {
         return [
             //
-            'name' => ['required', 'string','unique:tags,name','max:255'],
+            'name' => ['required', 'string', 'max:255', Rule::unique('tags', 'name')->ignore($this->tag)],
             'color' => ['nullable','string','min:3','max:7'],
         ];
     }

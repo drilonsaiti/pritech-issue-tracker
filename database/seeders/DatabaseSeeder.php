@@ -19,33 +19,40 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $demoUser = User::factory()->create([
+            'name' => 'Demo User',
+            'email' => 'demo@example.com',
+            'password' => bcrypt('password'),
+        ]);
+
         // Create user
         $users = User::factory(3)->create();
+        $allUsers = $users->push($demoUser);
 
         // Create tag first
         $tags = Tag::factory(8)->create();
 
         // Create projects
-        $projects = Project::factory(25)->create()->each(function (Project $project) use ($users) {
-            $project->update(['owner_id' => $users->random()->id]);
+        $projects = Project::factory(25)->create()->each(function (Project $project) use ($allUsers) {
+            $project->update(['owner_id' => $allUsers->random()->id]);
         });
 
         // For each project,create issues and attach tags & comments
-        $projects->each(function (Project $project) use ($tags,$users) {
+        $projects->each(function (Project $project) use ($tags,$allUsers) {
             Issue::factory(rand(5,10))
                 ->create(['project_id' => $project->id])
-                ->each(function (Issue $issue) use ($tags,$users) {
+                ->each(function (Issue $issue) use ($tags,$allUsers) {
 
                     // Attach tags to issue
                     $issue->tags()->attach(
-                        $tags->random(rand(1,3))->pluck('id')->toArray()
+                        $tags->random(rand(1,4))->pluck('id')->toArray()
                     );
 
                     // Add comments per issue
                     Comment::factory(rand(0,5))
                         ->create([
                             'issue_id' => $issue->id,
-                            'user_id' => $users->random()->id,
+                            'user_id' => $allUsers->random()->id,
                         ]);
                 });
         });
